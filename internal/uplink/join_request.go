@@ -47,18 +47,44 @@ func getDeviceAndDeviceProfile(ctx *JoinRequestContext) error {
 	var err error
 
 	ctx.Device, err = storage.GetDevice(common.DB, ctx.JoinRequestPayload.DevEUI)
-	if err != nil {
+	if err != nil && err != storage.ErrDoesNotExist {
 		return errors.Wrap(err, "get device error")
 	}
 
-	ctx.DeviceProfile, err = storage.GetDeviceProfile(common.DB, ctx.Device.DeviceProfileID)
-	if err != nil {
-		return errors.Wrap(err, "get device-profile error")
-	}
+	if err == storage.ErrDoesNotExist {
+		ctx.DeviceProfile, err = storage.GetMostRecentDeviceProfile(common.DB)
+		if err != nil {
+			return errors.Wrap(err, "get most recent device-profile error")
+		}
+		ctx.ServiceProfile, err = storage.GetMostRecentServiceProfile(common.DB)
+		if err != nil {
+			return errors.Wrap(err, "get most recent service-profile error")
+		}
+		rp, err := storage.GetMostRecentRoutingProfile(common.DB)
+		if err != nil {
+			return errors.Wrap(err, "get most recent routing-profile error")
+		}
+		d := storage.Device{
+			DevEUI:           ctx.JoinRequestPayload.DevEUI,
+			DeviceProfileID:  ctx.DeviceProfile.DeviceProfileID,
+			RoutingProfileID: rp.RoutingProfileID,
+			ServiceProfileID: ctx.ServiceProfile.ServiceProfileID,
+		}
+		err = storage.CreateDevice(common.DB, &d)
+		if err != nil {
+			return errors.Wrap(err, "create new device error")
+		}
+	} else {
+		ctx.DeviceProfile, err = storage.GetDeviceProfile(common.DB, ctx.Device.DeviceProfileID)
+		if err != nil {
+			return errors.Wrap(err, "get device-profile error")
+		}
 
-	ctx.ServiceProfile, err = storage.GetServiceProfile(common.DB, ctx.Device.ServiceProfileID)
-	if err != nil {
-		return errors.Wrap(err, "get service-profile error")
+		ctx.ServiceProfile, err = storage.GetServiceProfile(common.DB, ctx.Device.ServiceProfileID)
+		if err != nil {
+			return errors.Wrap(err, "get service-profile error")
+		}
+
 	}
 
 	if !ctx.DeviceProfile.SupportsJoin {

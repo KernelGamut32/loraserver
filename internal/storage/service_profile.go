@@ -286,3 +286,14 @@ func DeleteServiceProfile(db sqlx.Execer, id string) error {
 	log.WithField("service_profile_id", id).Info("service-profile deleted")
 	return nil
 }
+
+// GetMostRecentServiceProfile gets the most recently created service profile.
+func GetMostRecentServiceProfile(db sqlx.Queryer) (ServiceProfile, error) {
+	var sp ServiceProfile
+	err := sqlx.Get(db, &sp, "select * from service_profile order by created_at desc limit 1")
+	if err != nil {
+		return sp, handlePSQLError(err, "select error")
+	}
+
+	return sp, nil
+}
