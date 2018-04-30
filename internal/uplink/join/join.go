@@ -89,24 +89,24 @@ func logJoinRequestFramesCollected(ctx *context) error {
 	return nil
 }
 
-func getDeviceAndDeviceProfile(ctx *JoinRequestContext) error {
+func getDeviceAndDeviceProfile(ctx *context) error {
 	var err error
 
-	ctx.Device, err = storage.GetDevice(common.DB, ctx.JoinRequestPayload.DevEUI)
+	ctx.Device, err = storage.GetDevice(config.C.PostgreSQL.DB, ctx.JoinRequestPayload.DevEUI)
 	if err != nil && err != storage.ErrDoesNotExist {
 		return errors.Wrap(err, "get device error")
 	}
 
 	if err == storage.ErrDoesNotExist {
-		ctx.DeviceProfile, err = storage.GetMostRecentDeviceProfile(common.DB)
+		ctx.DeviceProfile, err = storage.GetMostRecentDeviceProfile(config.C.PostgreSQL.DB)
 		if err != nil {
 			return errors.Wrap(err, "get most recent device-profile error")
 		}
-		ctx.ServiceProfile, err = storage.GetMostRecentServiceProfile(common.DB)
+		ctx.ServiceProfile, err = storage.GetMostRecentServiceProfile(config.C.PostgreSQL.DB)
 		if err != nil {
 			return errors.Wrap(err, "get most recent service-profile error")
 		}
-		rp, err := storage.GetMostRecentRoutingProfile(common.DB)
+		rp, err := storage.GetMostRecentRoutingProfile(config.C.PostgreSQL.DB)
 		if err != nil {
 			return errors.Wrap(err, "get most recent routing-profile error")
 		}
@@ -116,17 +116,17 @@ func getDeviceAndDeviceProfile(ctx *JoinRequestContext) error {
 			RoutingProfileID: rp.RoutingProfileID,
 			ServiceProfileID: ctx.ServiceProfile.ServiceProfileID,
 		}
-		err = storage.CreateDevice(common.DB, &d)
+		err = storage.CreateDevice(config.C.PostgreSQL.DB, &d)
 		if err != nil {
 			return errors.Wrap(err, "create new device error")
 		}
 	} else {
-		ctx.DeviceProfile, err = storage.GetDeviceProfile(common.DB, ctx.Device.DeviceProfileID)
+		ctx.DeviceProfile, err = storage.GetDeviceProfile(config.C.PostgreSQL.DB, ctx.Device.DeviceProfileID)
 		if err != nil {
 			return errors.Wrap(err, "get device-profile error")
 		}
 
-		ctx.ServiceProfile, err = storage.GetServiceProfile(common.DB, ctx.Device.ServiceProfileID)
+		ctx.ServiceProfile, err = storage.GetServiceProfile(config.C.PostgreSQL.DB, ctx.Device.ServiceProfileID)
 		if err != nil {
 			return errors.Wrap(err, "get service-profile error")
 		}
