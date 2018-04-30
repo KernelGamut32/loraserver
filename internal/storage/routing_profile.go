@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/lorawan/backend"
@@ -131,4 +131,15 @@ func GetAllRoutingProfiles(db sqlx.Queryer) ([]RoutingProfile, error) {
 		return nil, handlePSQLError(err, "select error")
 	}
 	return rps, nil
+}
+
+// GetMostRecentRoutingProfile gets the most recently created routing profile.
+func GetMostRecentRoutingProfile(db sqlx.Queryer) (RoutingProfile, error) {
+	var rp RoutingProfile
+	err := sqlx.Get(db, &rp, "select * from routing_profile order by created_at desc limit 1")
+	if err != nil {
+		return rp, handlePSQLError(err, "select error")
+	}
+
+	return rp, nil
 }

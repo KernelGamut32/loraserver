@@ -347,3 +347,74 @@ func DeleteDeviceProfile(db sqlx.Execer, id string) error {
 	log.WithField("device_profile_id", id).Info("device-profile deleted")
 	return nil
 }
+
+// GetMostRecentDeviceProfile gets the most recently created device profile.
+func GetMostRecentDeviceProfile(db sqlx.Queryer) (DeviceProfile, error) {
+	var dp DeviceProfile
+
+	row := db.QueryRowx(`
+        select
+            created_at,
+            updated_at,
+
+            device_profile_id,
+            supports_class_b,
+            class_b_timeout,
+            ping_slot_period,
+            ping_slot_dr,
+            ping_slot_freq,
+            supports_class_c,
+            class_c_timeout,
+            mac_version,
+            reg_params_revision,
+            rx_delay_1,
+            rx_dr_offset_1,
+            rx_data_rate_2,
+            rx_freq_2,
+            factory_preset_freqs,
+            max_eirp,
+            max_duty_cycle,
+            supports_join,
+            rf_region,
+            supports_32bit_fcnt
+		from device_profile
+		order by created_at desc
+		limit 1
+        `)
+
+	var factoryPresetFreqs []int64
+
+	err := row.Scan(
+		&dp.CreatedAt,
+		&dp.UpdatedAt,
+		&dp.DeviceProfile.DeviceProfileID,
+		&dp.DeviceProfile.SupportsClassB,
+		&dp.DeviceProfile.ClassBTimeout,
+		&dp.DeviceProfile.PingSlotPeriod,
+		&dp.DeviceProfile.PingSlotDR,
+		&dp.DeviceProfile.PingSlotFreq,
+		&dp.DeviceProfile.SupportsClassC,
+		&dp.DeviceProfile.ClassCTimeout,
+		&dp.DeviceProfile.MACVersion,
+		&dp.DeviceProfile.RegParamsRevision,
+		&dp.DeviceProfile.RXDelay1,
+		&dp.DeviceProfile.RXDROffset1,
+		&dp.DeviceProfile.RXDataRate2,
+		&dp.DeviceProfile.RXFreq2,
+		pq.Array(&factoryPresetFreqs),
+		&dp.DeviceProfile.MaxEIRP,
+		&dp.DeviceProfile.MaxDutyCycle,
+		&dp.DeviceProfile.SupportsJoin,
+		&dp.DeviceProfile.RFRegion,
+		&dp.DeviceProfile.Supports32bitFCnt,
+	)
+	if err != nil {
+		return dp, handlePSQLError(err, "select error")
+	}
+
+	for _, f := range factoryPresetFreqs {
+		dp.DeviceProfile.FactoryPresetFreqs = append(dp.DeviceProfile.FactoryPresetFreqs, backend.Frequency(f))
+	}
+
+	return dp, nil
+}
