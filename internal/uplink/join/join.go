@@ -118,17 +118,16 @@ func getDeviceAndDeviceProfile(ctx *context) error {
 		}
 
 		return nil
-	} else {
-		ctx.DeviceProfile, err = storage.GetDeviceProfile(config.C.PostgreSQL.DB, ctx.Device.DeviceProfileID)
-		if err != nil {
-			return errors.Wrap(err, "get device-profile error")
-		}
+	}
 
-		ctx.ServiceProfile, err = storage.GetServiceProfile(config.C.PostgreSQL.DB, ctx.Device.ServiceProfileID)
-		if err != nil {
-			return errors.Wrap(err, "get service-profile error")
-		}
+	ctx.DeviceProfile, err = storage.GetDeviceProfile(config.C.PostgreSQL.DB, ctx.Device.DeviceProfileID)
+	if err != nil {
+		return errors.Wrap(err, "get device-profile error")
+	}
 
+	ctx.ServiceProfile, err = storage.GetServiceProfile(config.C.PostgreSQL.DB, ctx.Device.ServiceProfileID)
+	if err != nil {
+		return errors.Wrap(err, "get service-profile error")
 	}
 
 	if !ctx.DeviceProfile.SupportsJoin {
