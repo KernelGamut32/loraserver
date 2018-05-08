@@ -110,24 +110,30 @@ func getDeviceAndDeviceProfile(ctx *context) error {
 		if err != nil {
 			return errors.Wrap(err, "get most recent routing-profile error")
 		}
-		ctx.Device = storage.Device{
+		d := storage.Device{
 			DevEUI:           ctx.JoinRequestPayload.DevEUI,
 			DeviceProfileID:  ctx.DeviceProfile.DeviceProfileID,
 			RoutingProfileID: rp.RoutingProfileID,
 			ServiceProfileID: ctx.ServiceProfile.ServiceProfileID,
 		}
+		err = storage.CreateDevice(config.C.PostgreSQL.DB, &d)
+		if err != nil {
+			return errors.Wrap(err, "create new device error")
+		}
+		ctx.Device, err = storage.GetDevice(config.C.PostgreSQL.DB, ctx.JoinRequestPayload.DevEUI)
+		if err != nil {
+			return errors.Wrap(err, "get device error")
+		}
+	} else {
+		ctx.DeviceProfile, err = storage.GetDeviceProfile(config.C.PostgreSQL.DB, ctx.Device.DeviceProfileID)
+		if err != nil {
+			return errors.Wrap(err, "get device-profile error")
+		}
 
-		return nil
-	}
-
-	ctx.DeviceProfile, err = storage.GetDeviceProfile(config.C.PostgreSQL.DB, ctx.Device.DeviceProfileID)
-	if err != nil {
-		return errors.Wrap(err, "get device-profile error")
-	}
-
-	ctx.ServiceProfile, err = storage.GetServiceProfile(config.C.PostgreSQL.DB, ctx.Device.ServiceProfileID)
-	if err != nil {
-		return errors.Wrap(err, "get service-profile error")
+		ctx.ServiceProfile, err = storage.GetServiceProfile(config.C.PostgreSQL.DB, ctx.Device.ServiceProfileID)
+		if err != nil {
+			return errors.Wrap(err, "get service-profile error")
+		}
 	}
 
 	if !ctx.DeviceProfile.SupportsJoin {
