@@ -110,16 +110,14 @@ func getDeviceAndDeviceProfile(ctx *context) error {
 		if err != nil {
 			return errors.Wrap(err, "get most recent routing-profile error")
 		}
-		d := storage.Device{
+		ctx.Device = storage.Device{
 			DevEUI:           ctx.JoinRequestPayload.DevEUI,
 			DeviceProfileID:  ctx.DeviceProfile.DeviceProfileID,
 			RoutingProfileID: rp.RoutingProfileID,
 			ServiceProfileID: ctx.ServiceProfile.ServiceProfileID,
 		}
-		err = storage.CreateDevice(config.C.PostgreSQL.DB, &d)
-		if err != nil {
-			return errors.Wrap(err, "create new device error")
-		}
+
+		return nil
 	} else {
 		ctx.DeviceProfile, err = storage.GetDeviceProfile(config.C.PostgreSQL.DB, ctx.Device.DeviceProfileID)
 		if err != nil {
