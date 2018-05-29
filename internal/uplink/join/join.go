@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -98,6 +99,10 @@ func getDeviceAndDeviceProfile(ctx *context) error {
 	}
 
 	if err == storage.ErrDoesNotExist {
+		if _, err = os.Stat("/etc/autodiscover/on"); os.IsNotExist(err) {
+			return errors.Wrap(err, "auto-discover is disabled")
+		}
+
 		ctx.DeviceProfile, err = storage.GetMostRecentDeviceProfile(config.C.PostgreSQL.DB)
 		if err != nil {
 			return errors.Wrap(err, "get most recent device-profile error")
